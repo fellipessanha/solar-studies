@@ -15,12 +15,21 @@ def downloadDataFromYear(year):
     )
 
 
-threads = []
-for year in range(2000, 2025):
-    t = Thread(target=downloadDataFromYear, args=(year,))
-    threads.append(t)
-    t.start()
+def paralelizeTask(targetFunction):
+    threads = []
+    for year in range(2000, 2025):
+        t = Thread(target=targetFunction, args=(year,))
+        threads.append(t)
+        t.start()
 
-for t in threads:
-    print(f"joining thread {t}")
-    t.join()
+    for t in threads:
+        print(f"joining thread {t}")
+        t.join()
+
+
+def main():
+    paralelizeTask(downloadDataFromYear)
+
+
+if __name__ == "__main__":
+    main()
