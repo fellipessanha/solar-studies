@@ -15,31 +15,28 @@ class XGBForecaster(BaseForecaster):
         error_calculator,
     ) -> None:
         df = self._make_regressor_columns(df, target_col)
+
         super().__init__(
             df,
             train_threshold,
             test_threshold,
             target_col,
             idx_col,
-            XGBRegressor(
+            XGBRegressor,
+            error_calculator,
+            hyperparams=dict(
                 base_score=1.0,
                 booster="gbtree",
-                n_estimators=1000,
-                early_stopping_rounds=500,
                 objective="reg:squarederror",
                 max_depth=3,
                 learning_rate=0.1,
             ),
-            error_calculator,
         )
 
         self._features = ["doy", "woy", *[c for c in df.columns if "lag" in c]]
 
     def split_x_y_xgb(self, df):
-        return (
-            df.loc[df[self._target].notna(), self._features],
-            df.loc[df[self._target].notna(), self._target],
-        )
+        return (df.loc[:, self._features], df.loc[:, self._target])
 
     def _make_regressor_columns(self, df: pd.DataFrame, target: str):
         df = df.copy()
@@ -57,14 +54,23 @@ class XGBForecaster(BaseForecaster):
 
         return df
 
-    def _fit_model(self, df):
+    def _fit_model_train(self, df: pd.DataFrame) -> None:
         train, test = split_datasets(df, self._train_threshold, self._test_threshold)
-        x_train, y_train = self.split_x_y_xgb(train)
-        x_test, y_test = self.split_x_y_xgb(test)
+        x_train, y_train = self.split_x_y_xgb(train.loc[df[self._target].notna()])
+        x_test, y_test = self.split_x_y_xgb(test.loc[df[self._target].notna()])
         self._regressor.fit(
             x_train,
             y_train,
             eval_set=[(x_train, y_train), (x_test, y_test)],
+            verbose=100,
+        )
+
+    def _fit_model(self, df: pd.DataFrame) -> None:
+        x, y = self.split_x_y_xgb(df.loc[df[self._target].notna()])
+        self._regressor.fit(
+            x,
+            y,
+            eval_set=[(x, y), (x, y)],
             verbose=100,
         )
 
@@ -85,3 +91,22 @@ class XGBForecaster(BaseForecaster):
         forecast = self._regressor.predict(x_axis)
 
         return pd.DataFrame(data=forecast, index=x_axis.index, columns=["prediction"])
+
+    def make_future_prediction(self, df):
+        x_axis, _ = self.split_x_y_xgb(df)
+        forecast = self._regressor.predict(x_axis)
+
+        return forecast
+
+    def make_future_dataframe(self):
+        df = self._df.copy()
+        last_day = df.index.max()
+        future = pd.date_range(last_day, last_day + pd.DateOffset(months=6))
+        future = pd.DataFrame(index=future)
+        future["future"] = True
+        df["future"] = False
+        concat = pd.concat([df, future])
+
+        return self._make_regressor_columns(concat, self._target).loc[
+            concat["future"], [self._target, *self._features]
+        ]
