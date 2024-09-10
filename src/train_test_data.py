@@ -19,7 +19,7 @@ def split_datasets(
     date_upper_threshold: pd.DatetimeIndex,
 ):
     return (
-        df[training_threshold(df.index, date_upper_threshold)].dropna(),
+        df[training_threshold(df.index, date_lower_threshold)].dropna(),
         df[
             testing_treshold(df.index, date_lower_threshold, date_upper_threshold)
         ].dropna(),
