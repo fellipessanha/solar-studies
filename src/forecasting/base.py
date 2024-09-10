@@ -27,7 +27,12 @@ class BaseForecaster:
         self._error_calculator = error_calculator
 
     def _fit_model(self, df: pd.DataFrame) -> None: ...
-    def _parse_forecast(self, forecast) -> pd.DataFrame: ...
+    def _parse_forecast(self, forecast) -> pd.DataFrame:
+        """
+        should take the model forecast return an return a pandas dataframe with columns
+        ['datetime', 'prediction', target], indexed by 'datetime'
+        """
+        ...
 
     def _calculate_score(self, prediction):
         return self._error_calculator(prediction[self._target], prediction.prediction)

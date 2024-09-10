@@ -43,9 +43,6 @@ class ProphetForecaster(BaseForecaster):
             columns={}
         )
 
-    def _calculate_score(self, prediction):
-        return self._error_calculator(prediction[self._target], prediction.prediction)
-
     def make_prediction(self, df):
         future = self._regressor.make_future_dataframe(df.size)
         return self._regressor.predict(future)
