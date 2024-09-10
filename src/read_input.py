@@ -20,6 +20,8 @@ def group_datasets_by_location(location: str, years: List[str]):
     dfs = []
     for f in filenames:
         dfs.append(read_dataset(f))
+    for df in dfs[1:]:
+        df.rename(dfs[0].columns)
 
     return pd.concat(dfs).reset_index()
 
