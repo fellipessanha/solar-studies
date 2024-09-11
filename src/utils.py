@@ -1,2 +1,2 @@
-DEAFULT_TARGET_COLUMN = "global-radiation"
-DEAFULT_INDEX_COLUMN = "datetime"
+DEFAULT_TARGET_COLUMN = "global-radiation"
+DEFAULT_INDEX_COLUMN = "datetime"
