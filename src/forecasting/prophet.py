@@ -15,6 +15,7 @@ class ProphetForecaster(BaseForecaster):
         error_calculator,
         *args
     ) -> None:
+        self._regressor: Prophet
         super().__init__(
             df,
             train_threshold,
@@ -25,31 +26,38 @@ class ProphetForecaster(BaseForecaster):
             error_calculator,
         )
 
-    def _fit_model_train(self, df):
+    def _fit_model_train(self, df: pd.DataFrame) -> None:
+        self._reset_model()
         fit_data = pd.DataFrame(
             dict(ds=self.train_df.index, y=self.train_df[self._target])
         )
         self._regressor.fit(fit_data)
 
-    def _fit_model(self, df: pd.DataFrame) -> None:
+    def _fit_model(self) -> None:
         self._reset_model()
-        fit_data = pd.DataFrame(dict(ds=df.index, y=df[self._target]))
+        fit_data = pd.DataFrame(dict(ds=self._df.index, y=self._df[self._target]))
         self._regressor.fit(fit_data)
-        ...
 
     def _parse_forecast(self, forecast):
-        prediction = (
-            forecast.loc[
-                testing_treshold(
-                    forecast.ds, self._train_threshold, self._test_threshold
-                ),
-                ["ds", "yhat"],
-            ]
+        return (
+            forecast.loc[:, ["ds", "yhat"]]
             .rename(columns={"ds": self._idx, "yhat": "prediction"})
             .set_index("datetime")
         )
-        return prediction.merge(self.test_df[self._target], on=self._idx)
+
+    def _merge_score_dfs(self, prediction, test) -> pd.DataFrame:
+        return prediction.loc[
+            testing_treshold(
+                prediction.index, self._train_threshold, self._test_threshold
+            )
+        ].merge(test[self._target], on=self._idx)
 
     def make_prediction(self, df):
         future = self._regressor.make_future_dataframe(df.size)
         return self._regressor.predict(future)
+
+    def make_future_dataframe(self) -> pd.DataFrame:
+        return self._regressor.make_future_dataframe(int(366 / 2))
+
+    def make_future_prediction(self, df: pd.DataFrame) -> pd.DataFrame:
+        return self.make_prediction(df)

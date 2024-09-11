@@ -33,13 +33,16 @@ class BaseForecaster:
         self._regressor = self._regressor_initializer(**(self.hyperparams or {}))
 
     def _fit_model_train(self, df: pd.DataFrame) -> None: ...
-    def _fit_model(self, df: pd.DataFrame) -> None: ...
+    def _fit_model(self) -> None: ...
+
     def _parse_forecast(self, forecast) -> pd.DataFrame:
         """
         should take the model forecast return an return a pandas dataframe with columns
         ['datetime', 'prediction', target], indexed by 'datetime'
         """
         ...
+
+    def _merge_score_dfs(self, prediction, test) -> pd.DataFrame: ...
 
     def _calculate_score(self, prediction):
         return self._error_calculator(prediction[self._target], prediction.prediction)
@@ -49,5 +52,10 @@ class BaseForecaster:
     def evaluate_model(self) -> np.float64:
         self._fit_model_train(self._df)
         forecast = self.make_prediction(self.test_df)
-        self.prediction = self._parse_forecast(forecast)
+        future = self._parse_forecast(forecast)
+        self.prediction = self._merge_score_dfs(future, self.test_df)
         return self._calculate_score(self.prediction)
+
+    def make_future_dataframe(self, df: pd.DataFrame) -> pd.DataFrame: ...
+    def make_future_prediction(self, df: pd.DataFrame) -> pd.DataFrame:
+        return self.make_prediction(df)

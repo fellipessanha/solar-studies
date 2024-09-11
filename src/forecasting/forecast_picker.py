@@ -37,8 +37,8 @@ class ForecastPicker:
             idx_col,
         ]
 
-        self.optimum_forecast = self._rate_forecasts(
-            error_calculator, df_params, [ProphetForecaster, XGBForecaster]
+        self.optimum_forecast: BaseForecaster = self._rate_forecasts(
+            error_calculator, df_params, [XGBForecaster, ProphetForecaster]
         )
 
         self.historica_data = group_data_by_day_of_year(self.train_df, idx_col)
@@ -54,3 +54,9 @@ class ForecastPicker:
         }
 
         return min(self._forecast_scores, key=self._forecast_scores.get)
+
+    def _make_prediction(self):
+        fc = self.optimum_forecast
+        fc._fit_model()
+        future = fc.make_future_dataframe()
+        return fc.make_prediction(future)

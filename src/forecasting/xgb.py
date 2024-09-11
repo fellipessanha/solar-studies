@@ -65,7 +65,8 @@ class XGBForecaster(BaseForecaster):
             verbose=100,
         )
 
-    def _fit_model(self, df: pd.DataFrame) -> None:
+    def _fit_model(self) -> None:
+        df = self._df
         x, y = self.split_x_y_xgb(df.loc[df[self._target].notna()])
         self._regressor.fit(
             x,
@@ -75,11 +76,11 @@ class XGBForecaster(BaseForecaster):
         )
 
     def _parse_forecast(self, forecast):
-        prediction = pd.DataFrame(
-            data=forecast, index=forecast.index, columns=["prediction"]
-        )
+        return pd.DataFrame(data=forecast, index=forecast.index, columns=["prediction"])
+
+    def _merge_score_dfs(self, prediction, test) -> pd.DataFrame:
         prediction = prediction.merge(
-            self.test_df.loc[:, self._target],
+            test.loc[:, self._target],
             left_index=True,
             right_index=True,
         )
@@ -92,14 +93,14 @@ class XGBForecaster(BaseForecaster):
 
         return pd.DataFrame(data=forecast, index=x_axis.index, columns=["prediction"])
 
-    def make_future_prediction(self, df):
-        x_axis, _ = self.split_x_y_xgb(df)
-        forecast = self._regressor.predict(x_axis)
+    def make_future_prediction(self, df: pd.DataFrame) -> pd.DataFrame:
+        return self.make_prediction(df)
 
-        return forecast
-
-    def make_future_dataframe(self):
-        df = self._df.copy()
+    def make_future_dataframe(self, df=None):
+        if df:
+            df = df.copy()
+        else:
+            df = self._df.copy()
         last_day = df.index.max()
         future = pd.date_range(last_day, last_day + pd.DateOffset(months=6))
         future = pd.DataFrame(index=future)

@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 
 
-def group_datasets_by_location(location: str, years: List[str]):
+def group_datasets_by_location(location: str, years):
     filenames = []
     for year in years:
         filenames.extend(
@@ -20,8 +20,10 @@ def group_datasets_by_location(location: str, years: List[str]):
     dfs = []
     for f in filenames:
         dfs.append(read_dataset(f))
-    for df in dfs[1:]:
-        df.rename(dfs[0].columns)
+
+    for i in range(1, len(dfs)):
+        rename = dict(zip(dfs[i].columns, dfs[0].columns))
+        dfs[i] = dfs[i].rename(columns=rename)
 
     return pd.concat(dfs).reset_index()
 
