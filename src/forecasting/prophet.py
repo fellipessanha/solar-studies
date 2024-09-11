@@ -57,7 +57,11 @@ class ProphetForecaster(BaseForecaster):
         return self._regressor.predict(future)
 
     def make_future_dataframe(self) -> pd.DataFrame:
-        return self._regressor.make_future_dataframe(int(366 / 2))
+        return self._regressor.make_future_dataframe(366)
 
     def make_future_prediction(self, df: pd.DataFrame) -> pd.DataFrame:
-        return self.make_prediction(df)
+        pred = self._parse_forecast(self.make_prediction(df))
+        return pred.loc[
+            (pred.index > self._df.index.max())
+            & (pred.index < self._df.index.max() + pd.DateOffset(months=6))
+        ]
