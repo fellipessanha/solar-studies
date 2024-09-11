@@ -1,4 +1,4 @@
-from typing import List
+from typing import Dict, List
 import pandas as pd
 from src.forecasting.base import BaseForecaster
 from src.forecasting.prophet import ProphetForecaster
@@ -40,13 +40,13 @@ class ForecastPicker:
         self.optimum_forecast: BaseForecaster = self._rate_forecasts(
             error_calculator, df_params, [XGBForecaster, ProphetForecaster]
         )
-
-        self.historica_data = group_data_by_day_of_year(self.train_df, idx_col)
+        self.historical_data = group_data_by_day_of_year(self.train_df, idx_col)
+        self.historical_score = self._rate_historical_mean(error_calculator)
 
     def _rate_forecasts(
         self, error_calculator, df_params, forecasts: List[BaseForecaster]
     ):
-        self._forecast_scores = {
+        self._forecast_scores: Dict[BaseForecaster, float] = {
             i: i.evaluate_model()
             for i in [
                 f(*df_params, error_calculator=error_calculator) for f in forecasts
@@ -55,8 +55,48 @@ class ForecastPicker:
 
         return min(self._forecast_scores, key=self._forecast_scores.get)
 
-    def _make_prediction(self):
+    def _rate_historical_mean(self, error_calculator):
+        df = (
+            self.test_df[[self._target]].rename(columns={self._target: "target"}).copy()
+        )
+        df["doy"] = df.index.day_of_year
+        df = df.merge(self.historical_data[self._target], on="doy").rename(
+            columns={self._target: "historical"}
+        )
+        return error_calculator(df["target"], df["historical"])
+
+    def compare_predictions(self):
+        plot_pred = self.optimum_forecast.prediction.rename(
+            columns={
+                self._target: "target daily measurements",
+                "prediction": f"{type(self.optimum_forecast).__name__} - error = {self._forecast_scores[self.optimum_forecast]:.4f}",
+            }
+        )
+        for fc in self._forecast_scores:
+            if fc == self.optimum_forecast:
+                continue
+            plot_pred = plot_pred.merge(
+                fc.prediction["prediction"], on=self._idx
+            ).rename(
+                columns={
+                    "prediction": f"{type(fc).__name__} - error = {self._forecast_scores[fc]:.4f}"
+                }
+            )
+
+        plot_pred["doy"] = plot_pred.index.day_of_year
+        return (
+            plot_pred.merge(self.historical_data[self._target], on="doy")
+            .rename(
+                columns={
+                    self._target: f"historical mean - error = {self.historical_score:.4f}"
+                }
+            )
+            .drop(columns="doy")
+            .copy()
+        )
+
+    def make_prediction(self):
         fc = self.optimum_forecast
         fc._fit_model()
         future = fc.make_future_dataframe()
-        return fc.make_prediction(future)
+        return fc.make_future_prediction(future)
