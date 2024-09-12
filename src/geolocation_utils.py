@@ -20,6 +20,6 @@ def harversine_from_geolocation(lat_a, lon_a, lat_b, lon_b):
     return distance
 
 
-def distance_from_station_code(df: pd.DataFrame, code: str, radius) -> pd.DataFrame:
+def in_radius_from_station_code(df: pd.DataFrame, code: str, radius) -> pd.DataFrame:
     lat, lon = df.loc[df.code == code, ["lat", "lon"]].iloc[0]
-    return df.loc[harversine_from_geolocation(lat, lon, df.lat, df.lon) < radius]
+    return harversine_from_geolocation(lat, lon, df.lat, df.lon) < radius
