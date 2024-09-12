@@ -99,7 +99,7 @@ class XGBForecaster(BaseForecaster):
         starting_on: pd.DatetimeIndex = None,
         duration_in_months: int = None,
     ) -> pd.DataFrame:
-        future = self.make_future_dataframe(df, starting_on, duration_in_months)
+        future = self.make_future_dataframe(starting_on, duration_in_months)
         return self.make_prediction(future)
 
     def make_future_dataframe(
