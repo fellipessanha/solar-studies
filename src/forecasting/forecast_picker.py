@@ -95,8 +95,9 @@ class ForecastPicker:
             .copy()
         )
 
-    def make_prediction(self):
+    def make_prediction(
+        self, starting_on: pd.DatetimeIndex = None, duration_in_months: int = None
+    ):
         fc = self.optimum_forecast
         fc._fit_model()
-        future = fc.make_future_dataframe()
-        return fc.make_future_prediction(future)
+        return fc.make_future_prediction(starting_on, duration_in_months)

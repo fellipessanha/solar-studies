@@ -93,16 +93,25 @@ class XGBForecaster(BaseForecaster):
 
         return pd.DataFrame(data=forecast, index=x_axis.index, columns=["prediction"])
 
-    def make_future_prediction(self, df: pd.DataFrame) -> pd.DataFrame:
-        return self.make_prediction(df)
+    def make_future_prediction(
+        self,
+        df: pd.DataFrame,
+        starting_on: pd.DatetimeIndex = None,
+        duration_in_months: int = None,
+    ) -> pd.DataFrame:
+        future = self.make_future_dataframe(df, starting_on, duration_in_months)
+        return self.make_prediction(future)
 
-    def make_future_dataframe(self, df=None):
-        if df:
-            df = df.copy()
-        else:
-            df = self._df.copy()
-        last_day = df.index.max()
-        future = pd.date_range(last_day, last_day + pd.DateOffset(months=6))
+    def make_future_dataframe(
+        self,
+        starting_on: pd.DatetimeIndex = None,
+        duration_in_months: int = None,
+    ):
+        df = self._df.copy()
+        starting_on = starting_on or df.index.max()
+        future = pd.date_range(
+            df.index.max(), starting_on + pd.DateOffset(months=duration_in_months or 6)
+        )
         future = pd.DataFrame(index=future)
         future["future"] = True
         df["future"] = False

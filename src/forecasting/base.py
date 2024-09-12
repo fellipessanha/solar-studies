@@ -47,7 +47,7 @@ class BaseForecaster:
     def _calculate_score(self, prediction):
         return self._error_calculator(prediction[self._target], prediction.prediction)
 
-    def make_prediction(self, df: pd.DataFrame) -> pd.DataFrame: ...
+    def make_prediction(self) -> pd.DataFrame: ...
 
     def evaluate_model(self) -> np.float64:
         self._fit_model_train(self._df)
@@ -57,5 +57,5 @@ class BaseForecaster:
         return self._calculate_score(self.prediction)
 
     def make_future_dataframe(self, df: pd.DataFrame) -> pd.DataFrame: ...
-    def make_future_prediction(self, df: pd.DataFrame) -> pd.DataFrame:
-        return self.make_prediction(df)
+    def make_future_prediction(self) -> pd.DataFrame:
+        return self.make_prediction()
