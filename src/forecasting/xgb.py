@@ -13,9 +13,11 @@ class XGBForecaster(BaseForecaster):
         target_col: str,
         idx_col: str,
         error_calculator,
+        verbose=None,
     ) -> None:
         df = self._make_regressor_columns(df, target_col)
 
+        self.verbose = verbose
         super().__init__(
             df,
             train_threshold,
@@ -62,7 +64,7 @@ class XGBForecaster(BaseForecaster):
             x_train,
             y_train,
             eval_set=[(x_train, y_train), (x_test, y_test)],
-            verbose=100,
+            verbose=self.verbose,
         )
 
     def _fit_model(self) -> None:
@@ -72,7 +74,7 @@ class XGBForecaster(BaseForecaster):
             x,
             y,
             eval_set=[(x, y), (x, y)],
-            verbose=100,
+            verbose=self.verbose,
         )
 
     def _parse_forecast(self, forecast):
